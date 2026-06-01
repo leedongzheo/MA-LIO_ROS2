@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Khai báo các tham số đầu vào (Arguments) chuẩn ROS2 -->
+    <arg name="driver" default="file_player"/>
+    <arg name="output" default="screen"/>
+
+    <!-- Kích hoạt node phát dữ liệu file_player -->
+    <!-- Trong ROS2 XML: pkg dùng để chỉ định tên gói, exec dùng để chỉ định file thực thi -->
+    <node pkg="$(var driver)" exec="$(var driver)" name="$(var driver)" output="$(var output)">
+    </node>
+
+    <!-- Các tham số bổ sung cho cấu hình camera -->
+    <arg name="camera" default="stereo"/>
+    <arg name="frame_id" default="$(var camera)"/>
+    <arg name="proc" default="true"/>
+</launch>
