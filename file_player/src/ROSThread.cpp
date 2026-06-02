@@ -937,6 +937,86 @@ void ROSThread::LivoxTeleThread()
 }
 
 //ouster
+// void ROSThread::OusterThread()
+// {
+//   int current_file_index = 0;
+//   int previous_file_index = 0;
+//   while(1){
+//     std::unique_lock<std::mutex> ul(ouster_thread_.mutex_);
+//     ouster_thread_.cv_.wait(ul);
+//     if(ouster_thread_.active_ == false) return;
+//     ul.unlock();
+
+//     while(!ouster_thread_.data_queue_.empty()){
+//       auto data = ouster_thread_.pop();
+
+//       if(to_string(data) + ".bin" == ouster_next_.first){
+//         //publish
+//         ouster_next_.second.header.stamp = rclcpp::Time(data);
+//         ouster_next_.second.header.frame_id = "ouster";
+//         ouster_pub_->publish(ouster_next_.second);
+
+//       }else{
+//         cout << "Re-load right ouster from path" << endl;
+//         //load current data
+//         pcl::PointCloud<OusterPointXYZIRT> cloud;
+//         cloud.clear();
+//         sensor_msgs::msg::PointCloud2 publish_cloud;
+//         string current_file_name = data_folder_path_ + "/sensor_data/ouster" +"/"+ to_string(data) + ".bin";
+
+//         if(1){
+//             ifstream file;
+//             file.open(current_file_name, ios::in|ios::binary);
+//             while(!file.eof()){
+//                 OusterPointXYZIRT point;
+//                 file.read(reinterpret_cast<char *>(&point.x), sizeof(float));
+//                 file.read(reinterpret_cast<char *>(&point.y), sizeof(float));
+//                 file.read(reinterpret_cast<char *>(&point.z), sizeof(float));
+//                 file.read(reinterpret_cast<char *>(&point.intensity), sizeof(float));
+//                 file.read(reinterpret_cast<char *>(&point.ring), sizeof(uint16_t));
+//                 file.read(reinterpret_cast<char *>(&point.t), sizeof(uint32_t));
+//                 cloud.points.push_back (point);
+//             }
+	   
+//             file.close();
+
+//             pcl::toROSMsg(cloud, publish_cloud);
+//             publish_cloud.header.stamp = rclcpp::Time(data);
+//             publish_cloud.header.frame_id = "ouster";
+//             ouster_pub_->publish(publish_cloud);
+
+//         }
+//         previous_file_index = 0;
+//       }
+//       //load next data
+//       pcl::PointCloud<OusterPointXYZIRT> cloud;
+//       cloud.clear();
+//       sensor_msgs::msg::PointCloud2 publish_cloud;
+//       current_file_index = find(next(ouster_file_list_.begin(),max(0,previous_file_index-search_bound_)),ouster_file_list_.end(),to_string(data)+".bin") - ouster_file_list_.begin();
+//       if(find(next(ouster_file_list_.begin(),max(0,previous_file_index-search_bound_)),ouster_file_list_.end(),ouster_file_list_[current_file_index+1]) != ouster_file_list_.end()){
+//           string next_file_name = data_folder_path_ + "/sensor_data/ouster" +"/"+ ouster_file_list_[current_file_index+1];
+//           ifstream file;
+//           file.open(next_file_name, ios::in|ios::binary);
+//           while(!file.eof()){
+//               OusterPointXYZIRT point;
+//               file.read(reinterpret_cast<char *>(&point.x), sizeof(float));
+//               file.read(reinterpret_cast<char *>(&point.y), sizeof(float));
+//               file.read(reinterpret_cast<char *>(&point.z), sizeof(float));
+//               file.read(reinterpret_cast<char *>(&point.intensity), sizeof(float));
+//               file.read(reinterpret_cast<char *>(&point.ring), sizeof(uint16_t));
+//               file.read(reinterpret_cast<char *>(&point.t), sizeof(uint32_t));
+//               cloud.points.push_back (point);
+//           }
+//           file.close();
+//           pcl::toROSMsg(cloud, publish_cloud);
+//           ouster_next_ = make_pair(ouster_file_list_[current_file_index+1], publish_cloud);
+//       }
+
+//       previous_file_index = current_file_index;
+//     }
+//     if(ouster_thread_.active_ == false) return;
+//   }
+// } //end ouster
 void ROSThread::OusterThread()
 {
   int current_file_index = 0;
@@ -951,47 +1031,85 @@ void ROSThread::OusterThread()
       auto data = ouster_thread_.pop();
 
       if(to_string(data) + ".bin" == ouster_next_.first){
-        //publish
         ouster_next_.second.header.stamp = rclcpp::Time(data);
         ouster_next_.second.header.frame_id = "ouster";
         ouster_pub_->publish(ouster_next_.second);
-
-      }else{
+      // if(to_string(data) + ".bin" == ouster_next_.first){
+      //   // publish
+      //   // ÉP SỐ NANO GIÂY QUA DOUBLE ĐỂ TẠO SAI SỐ TRÙNG KHỚP 100% VỚI LÕI SLAM
+      //   double double_stamp = static_cast<double>(data) / 1000000000.0;
+      //   ouster_next_.second.header.stamp = rclcpp::Time(static_cast<int64_t>(double_stamp * 1000000000.0));
+        
+      //   ouster_next_.second.header.frame_id = "ouster";
+      //   ouster_pub_->publish(ouster_next_.second);
+      }
+      else{
         cout << "Re-load right ouster from path" << endl;
-        //load current data
         pcl::PointCloud<OusterPointXYZIRT> cloud;
         cloud.clear();
         sensor_msgs::msg::PointCloud2 publish_cloud;
         string current_file_name = data_folder_path_ + "/sensor_data/ouster" +"/"+ to_string(data) + ".bin";
 
-        if(1){
-            ifstream file;
-            file.open(current_file_name, ios::in|ios::binary);
-            while(!file.eof()){
-                OusterPointXYZIRT point;
-                file.read(reinterpret_cast<char *>(&point.x), sizeof(float));
-                file.read(reinterpret_cast<char *>(&point.y), sizeof(float));
-                file.read(reinterpret_cast<char *>(&point.z), sizeof(float));
-                file.read(reinterpret_cast<char *>(&point.intensity), sizeof(float));
-                file.read(reinterpret_cast<char *>(&point.ring), sizeof(uint16_t));
-                file.read(reinterpret_cast<char *>(&point.t), sizeof(uint32_t));
-                cloud.points.push_back (point);
-            }
-	   
-            file.close();
-
-            pcl::toROSMsg(cloud, publish_cloud);
-            publish_cloud.header.stamp = rclcpp::Time(data);
-            publish_cloud.header.frame_id = "ouster";
-            ouster_pub_->publish(publish_cloud);
-
+        ifstream file;
+        file.open(current_file_name, ios::in|ios::binary);
+        while(!file.eof()){
+            OusterPointXYZIRT point;
+            file.read(reinterpret_cast<char *>(&point.x), sizeof(float));
+            file.read(reinterpret_cast<char *>(&point.y), sizeof(float));
+            file.read(reinterpret_cast<char *>(&point.z), sizeof(float));
+            file.read(reinterpret_cast<char *>(&point.intensity), sizeof(float));
+            file.read(reinterpret_cast<char *>(&point.ring), sizeof(uint16_t));
+            file.read(reinterpret_cast<char *>(&point.t), sizeof(uint32_t));
+            cloud.points.push_back(point);
         }
-        previous_file_index = 0;
+        file.close();
+
+        // Khởi tạo cấu trúc bản tin PointCloud2 chuẩn ROS2 Jazzy
+        publish_cloud.height = 1;
+        publish_cloud.width = cloud.points.size();
+        publish_cloud.is_dense = true;
+        publish_cloud.is_bigendian = false;
+
+        sensor_msgs::PointCloud2Modifier modifier(publish_cloud);
+        modifier.setPointCloud2Fields(6,
+            "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+            "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+            "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+            "intensity", 1, sensor_msgs::msg::PointField::FLOAT32,
+            "ring", 1, sensor_msgs::msg::PointField::UINT16,
+            "t", 1, sensor_msgs::msg::PointField::UINT32);
+        modifier.resize(cloud.points.size());
+
+        sensor_msgs::PointCloud2Iterator<float> iter_x(publish_cloud, "x");
+        sensor_msgs::PointCloud2Iterator<float> iter_y(publish_cloud, "y");
+        sensor_msgs::PointCloud2Iterator<float> iter_z(publish_cloud, "z");
+        sensor_msgs::PointCloud2Iterator<float> iter_intensity(publish_cloud, "intensity");
+        sensor_msgs::PointCloud2Iterator<uint16_t> iter_ring(publish_cloud, "ring");
+        sensor_msgs::PointCloud2Iterator<uint32_t> iter_t(publish_cloud, "t");
+
+        for (size_t i = 0; i < cloud.points.size(); ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_intensity, ++iter_ring, ++iter_t) {
+            *iter_x = cloud.points[i].x;
+            *iter_y = cloud.points[i].y;
+            *iter_z = cloud.points[i].z;
+            *iter_intensity = cloud.points[i].intensity;
+            *iter_ring = cloud.points[i].ring;
+            *iter_t = cloud.points[i].t;
+        }
+
+        publish_cloud.header.stamp = rclcpp::Time(data);
+        publish_cloud.header.frame_id = "ouster";
+        ouster_pub_->publish(publish_cloud);
+        // double double_stamp = static_cast<double>(data) / 1000000000.0;
+        // publish_cloud.header.stamp = rclcpp::Time(static_cast<int64_t>(double_stamp * 1000000000.0));
+        // publish_cloud.header.frame_id = "ouster";
+        // ouster_pub_->publish(publish_cloud);
+        // previous_file_index = 0;
       }
-      //load next data
-      pcl::PointCloud<OusterPointXYZIRT> cloud;
-      cloud.clear();
-      sensor_msgs::msg::PointCloud2 publish_cloud;
+
+      // Xử lý nạp trước cho khung dữ liệu kế tiếp (Next Data Section)
+      pcl::PointCloud<OusterPointXYZIRT> cloud_next;
+      cloud_next.clear();
+      sensor_msgs::msg::PointCloud2 publish_cloud_next;
       current_file_index = find(next(ouster_file_list_.begin(),max(0,previous_file_index-search_bound_)),ouster_file_list_.end(),to_string(data)+".bin") - ouster_file_list_.begin();
       if(find(next(ouster_file_list_.begin(),max(0,previous_file_index-search_bound_)),ouster_file_list_.end(),ouster_file_list_[current_file_index+1]) != ouster_file_list_.end()){
           string next_file_name = data_folder_path_ + "/sensor_data/ouster" +"/"+ ouster_file_list_[current_file_index+1];
@@ -1005,19 +1123,51 @@ void ROSThread::OusterThread()
               file.read(reinterpret_cast<char *>(&point.intensity), sizeof(float));
               file.read(reinterpret_cast<char *>(&point.ring), sizeof(uint16_t));
               file.read(reinterpret_cast<char *>(&point.t), sizeof(uint32_t));
-              cloud.points.push_back (point);
+              cloud_next.points.push_back(point);
           }
           file.close();
-          pcl::toROSMsg(cloud, publish_cloud);
-          ouster_next_ = make_pair(ouster_file_list_[current_file_index+1], publish_cloud);
-      }
+
+          publish_cloud_next.height = 1;
+          publish_cloud_next.width = cloud_next.points.size();
+          publish_cloud_next.is_dense = true;
+          publish_cloud_next.is_bigendian = false;
+
+          sensor_msgs::PointCloud2Modifier modifier_next(publish_cloud_next);
+          modifier_next.setPointCloud2Fields(6,
+              "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+              "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+              "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+              "intensity", 1, sensor_msgs::msg::PointField::FLOAT32,
+              "ring", 1, sensor_msgs::msg::PointField::UINT16,
+              "t", 1, sensor_msgs::msg::PointField::UINT32);
+          modifier_next.resize(cloud_next.points.size());
+
+          sensor_msgs::PointCloud2Iterator<float> iter_nx(publish_cloud_next, "x");
+          sensor_msgs::PointCloud2Iterator<float> iter_ny(publish_cloud_next, "y");
+          sensor_msgs::PointCloud2Iterator<float> iter_nz(publish_cloud_next, "z");
+          sensor_msgs::PointCloud2Iterator<float> iter_nintensity(publish_cloud_next, "intensity");
+          sensor_msgs::PointCloud2Iterator<uint16_t> iter_nring(publish_cloud_next, "ring");
+          sensor_msgs::PointCloud2Iterator<uint32_t> iter_nt(publish_cloud_next, "t");
+
+          for (size_t i = 0; i < cloud_next.points.size(); ++i, ++iter_nx, ++iter_ny, ++iter_nz, ++iter_nintensity, ++iter_nring, ++iter_nt) {
+              *iter_nx = cloud_next.points[i].x;
+              *iter_ny = cloud_next.points[i].y;
+              *iter_nz = cloud_next.points[i].z;
+              *iter_nintensity = cloud_next.points[i].intensity;
+              *iter_nring = cloud_next.points[i].ring;
+              *iter_nt = cloud_next.points[i].t;
+          }
+          // ouster_next_ = make_pair(ouster_file_list_[current_file_index+1], publish_cloud_next);
+          double double_stamp_next = static_cast<double>(data) / 1000000000.0; // Hoặc dùng ouster_file_list kế tiếp để lấy stamp chính xác
+          publish_cloud_next.header.stamp = rclcpp::Time(static_cast<int64_t>(double_stamp_next * 1000000000.0));
+          ouster_next_ = make_pair(ouster_file_list_[current_file_index+1], publish_cloud_next);
+        }
 
       previous_file_index = current_file_index;
     }
     if(ouster_thread_.active_ == false) return;
   }
-} //end ouster
-
+}
 
 int ROSThread::GetDirList(string dir, vector<string> &files)
 {
